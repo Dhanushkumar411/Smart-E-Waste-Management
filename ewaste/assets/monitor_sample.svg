@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="monGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="#f8fafc" rx="16"/>
+  <rect x="20" y="20" width="360" height="260" fill="#f1f5f9" rx="12" stroke="#cbd5e1" stroke-width="2"/>
+
+  <!-- Monitor Frame -->
+  <rect x="65" y="45" width="270" height="170" rx="8" fill="url(#monGrad)" stroke="#1e293b" stroke-width="2"/>
+  <rect x="75" y="55" width="250" height="150" fill="#0284c7" opacity="0.3"/>
+  
+  <!-- Stand -->
+  <path d="M 185 215 L 180 250 L 160 255 L 240 255 L 220 250 L 215 215 Z" fill="#475569"/>
+  
+  <!-- Broken Screen Effect -->
+  <path d="M 100 80 L 190 140 L 140 190 M 190 140 L 290 110 M 190 140 L 230 180" 
+        stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+        
+  <!-- Hazardous Warning -->
+  <rect x="110" y="265" width="180" height="22" rx="4" fill="#fee2e2"/>
+  <text x="200" y="280" fill="#dc2626" font-size="10" font-weight="bold" font-family="sans-serif" text-anchor="middle">Contains Mercury & Lead Glass</text>
+</svg>

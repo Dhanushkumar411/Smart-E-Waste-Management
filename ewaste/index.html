@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoCycle — Smart E-Waste Management & Circular Economy Platform</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#022c22'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-stone-50 text-stone-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Top Announcement Bar -->
+  <div class="bg-emerald-950 text-emerald-300 text-[11px] py-1.5 px-4 text-center font-medium border-b border-emerald-900 flex items-center justify-center gap-2">
+    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <span>National E-Waste Circular Drive Active: Earn <strong>2x EcoPoints</strong> on all lithium batteries and broken laptops this week!</span>
+  </div>
+
+  <!-- Header & Navigation Bar -->
+  <header class="sticky top-0 z-50 glass-nav border-b border-stone-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="App.switchTab('dashboard')">
+          <img src="assets/logo.svg" alt="EcoCycle" class="h-10 w-auto">
+        </div>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden xl:flex items-center space-x-1">
+          <button data-nav-target="dashboard" class="nav-link nav-active px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            Home
+          </button>
+          <button data-nav-target="pickup" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-truck mr-1 text-emerald-600"></i> Doorstep Pickup
+          </button>
+          <button data-nav-target="ai-classifier" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-brain mr-1 text-purple-600"></i> AI Identifier
+          </button>
+          <button data-nav-target="locator" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-map-marker-alt mr-1 text-rose-500"></i> Center Locator
+          </button>
+          <button data-nav-target="rewards" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-gift mr-1 text-amber-500"></i> EcoPoints
+          </button>
+          <button data-nav-target="marketplace" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-microchip mr-1 text-indigo-500"></i> ReUseTech
+          </button>
+          <button data-nav-target="calculator" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-calculator mr-1 text-emerald-600"></i> Carbon Calculator
+          </button>
+          <button data-nav-target="reports" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-bullhorn mr-1 text-red-500"></i> Report Dumping
+          </button>
+          <button data-nav-target="learning" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-emerald-700 hover:bg-stone-100">
+            <i class="fas fa-graduation-cap mr-1 text-sky-600"></i> Awareness & Quiz
+          </button>
+          <!-- Role Protected Tabs -->
+          <button id="navCollectorTab" data-nav-target="collector" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-800 bg-sky-50 hover:bg-sky-100 hidden">
+            <i class="fas fa-dolly mr-1 text-sky-600"></i> Collector Ops
+          </button>
+          <button id="navAdminTab" data-nav-target="admin" class="nav-link px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-800 bg-rose-50 hover:bg-rose-100 hidden">
+            <i class="fas fa-shield-alt mr-1 text-rose-600"></i> Admin Center
+          </button>
+        </nav>
+
+        <!-- Right Side: Role Selector & User Profile -->
+        <div class="flex items-center gap-3">
+          <!-- Role Quick Switcher -->
+          <div class="flex items-center gap-1.5 bg-stone-100 border border-stone-200 rounded-xl px-2.5 py-1">
+            <i class="fas fa-user-tag text-xs text-stone-500"></i>
+            <span class="text-[11px] font-semibold text-stone-500 hidden sm:inline">Role:</span>
+            <select id="roleQuickSwitch" class="bg-transparent text-xs font-bold text-stone-800 outline-none cursor-pointer">
+              <option value="citizen">Citizen (Alex)</option>
+              <option value="collector">Collector (Vikram)</option>
+              <option value="admin">Admin (Dr. Sarah)</option>
+            </select>
+          </div>
+
+          <!-- EcoPoints Badge Pill -->
+          <div onclick="App.switchTab('rewards')" class="cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-all">
+            <i class="fas fa-coins text-amber-500 text-xs"></i>
+            <span id="headerUserPoints" class="text-xs font-black text-emerald-800">1,250 pts</span>
+          </div>
+
+          <!-- User Profile Icon / Auth Modal Trigger -->
+          <button onclick="App.openModal('authModal')" class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-stone-100 transition-colors">
+            <div id="headerUserAvatar" class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+              AM
+            </div>
+            <div class="hidden lg:block text-left">
+              <p id="headerUserName" class="text-xs font-bold text-stone-800 leading-tight">Alex Morgan</p>
+              <span id="headerUserRole" class="badge badge-citizen">CITIZEN</span>
+            </div>
+          </button>
+
+          <!-- Mobile Nav Toggle -->
+          <button id="mobileMenuToggle" class="xl:hidden p-2 text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100">
+            <i class="fas fa-bars text-lg"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobileNavMenu" class="hidden xl:hidden border-t border-stone-200 bg-white px-4 pt-2 pb-4 space-y-1 shadow-lg">
+      <button data-nav-target="dashboard" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Home</button>
+      <button data-nav-target="pickup" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Doorstep Pickup</button>
+      <button data-nav-target="ai-classifier" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">AI E-Waste Identifier</button>
+      <button data-nav-target="locator" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Recycling Center Locator</button>
+      <button data-nav-target="rewards" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">EcoPoints Rewards</button>
+      <button data-nav-target="marketplace" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">ReUseTech Component Exchange</button>
+      <button data-nav-target="calculator" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Carbon Footprint Calculator</button>
+      <button data-nav-target="reports" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Report Illegal Dumping</button>
+      <button data-nav-target="learning" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">Awareness & Quiz</button>
+      <button data-nav-target="collector" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-sky-800 bg-sky-50">Collector Operations</button>
+      <button data-nav-target="admin" class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-rose-800 bg-rose-50">Admin Center</button>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
+
+  <!-- MAIN APPLICATION CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: HOME / DASHBOARD                    -->
+    <!-- ========================================== -->
+    <section id="tab-dashboard" class="app-tab-section space-y-8">
+      
+      <!-- Hero Section -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-stone-900 to-slate-900 text-white p-8 sm:p-12 shadow-2xl">
+        <!-- Subtle decorative glow -->
+        <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-sky-500/20 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-3xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-4">
+            <i class="fas fa-recycle text-emerald-400"></i> Next-Gen Circular Electronics
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4">
+            Don't Bin Your Tech. <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+              Power The Circular Economy.
+            </span>
+          </h1>
+
+          <p class="text-stone-300 text-sm sm:text-base mb-8 max-w-2xl leading-relaxed">
+            Schedule free doorstep e-waste pickups, identify hazardous components with our AI computer vision scanner, 
+            redeem EcoPoints for vouchers, or salvage parts for students & technicians.
+          </p>
+
+          <div class="flex flex-wrap gap-3">
+            <button onclick="App.switchTab('pickup')" class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-2">
+              <i class="fas fa-calendar-check"></i> Book Doorstep Pickup
+            </button>
+            <button onclick="App.switchTab('ai-classifier')" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 transition-all flex items-center gap-2">
+              <i class="fas fa-camera"></i> AI Image Identifier
+            </button>
+            <button onclick="App.switchTab('calculator')" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 transition-all flex items-center gap-2">
+              <i class="fas fa-leaf"></i> Calculate Carbon Saved
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Dynamic Metrics Ticker -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
+            <i class="fas fa-weight-hanging"></i>
+          </div>
+          <div>
+            <span id="homeStatWeight" class="text-xl sm:text-2xl font-black text-stone-900 block leading-tight">14,820 kg</span>
+            <span class="text-xs text-stone-500 font-medium">E-Waste Diverted</span>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
+            <i class="fas fa-smog"></i>
+          </div>
+          <div>
+            <span id="homeStatCo2" class="text-xl sm:text-2xl font-black text-stone-900 block leading-tight">331,968 kg</span>
+            <span class="text-xs text-stone-500 font-medium">CO₂ Emissions Averted</span>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div>
+            <span class="text-xl sm:text-2xl font-black text-stone-900 block leading-tight">485,200</span>
+            <span class="text-xs text-stone-500 font-medium">EcoPoints Awarded</span>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
+            <i class="fas fa-users"></i>
+          </div>
+          <div>
+            <span id="homeStatPickups" class="text-xl sm:text-2xl font-black text-stone-900 block leading-tight">4,213</span>
+            <span class="text-xs text-stone-500 font-medium">Verified Pickups</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Feature Access Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-xl font-black text-stone-900">Explore Platform Modules</h2>
+            <p class="text-xs text-stone-500">Everything you need to turn obsolete electronics into valuable sustainable resources</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Card 1 -->
+          <div onclick="App.switchTab('pickup')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-truck-pickup"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-emerald-700 transition-colors">Doorstep E-Waste Collection</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">Book a certified collector to pick up old smartphones, laptops, cables, or appliances right from your doorstep with live tracking.</p>
+            <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">Schedule pickup <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+
+          <!-- Card 2 -->
+          <div onclick="App.switchTab('ai-classifier')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-eye"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-purple-700 transition-colors">AI E-Waste Classifier</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">Upload a photo of your discarded gadget. Our AI detects component types, hazardous toxins, and safe disposal actions.</p>
+            <span class="text-xs font-bold text-purple-600 flex items-center gap-1">Scan gadget now <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+
+          <!-- Card 3 -->
+          <div onclick="App.switchTab('locator')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-rose-700 transition-colors">Certified Center Locator</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">Find government-authorized drop-off centers, check operating hours, accepted electronics, and get one-tap GPS navigation.</p>
+            <span class="text-xs font-bold text-rose-600 flex items-center gap-1">Find nearby bins <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+
+          <!-- Card 4 -->
+          <div onclick="App.switchTab('rewards')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-award"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-amber-700 transition-colors">EcoPoints & Vouchers</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">Earn points for every kilogram recycled. Redeem for shopping vouchers, tree planting certificates, and repair discounts.</p>
+            <span class="text-xs font-bold text-amber-600 flex items-center gap-1">View rewards catalog <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+
+          <!-- Card 5 -->
+          <div onclick="App.switchTab('marketplace')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-exchange-alt"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-indigo-700 transition-colors">ReUseTech Component Board</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">Connect with engineering students, makers, and repair technicians looking for salvageable components, cells, and boards.</p>
+            <span class="text-xs font-bold text-indigo-600 flex items-center gap-1">Browse exchange <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+
+          <!-- Card 6 -->
+          <div onclick="App.switchTab('reports')" class="p-6 rounded-2xl border border-stone-200 bg-white hover:border-emerald-500 hover:shadow-lg transition-all cursor-pointer group">
+            <div class="w-12 h-12 rounded-xl bg-red-100 text-red-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-shield-virus"></i>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1 group-hover:text-red-700 transition-colors">Report Illegal Dumping</h3>
+            <p class="text-xs text-stone-500 mb-3 leading-relaxed">See open burning or hazardous wire dumping? Report with geotagged photos to notify municipal enforcement and earn +150 points.</p>
+            <span class="text-xs font-bold text-red-600 flex items-center gap-1">File report <i class="fas fa-arrow-right text-[10px]"></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Closed-Loop Circular Process Infographic -->
+      <div class="p-8 rounded-3xl bg-emerald-950 text-white">
+        <h3 class="text-xl font-bold mb-2 text-center">How EcoCycle Powers The Closed-Loop Lifecycle</h3>
+        <p class="text-xs text-emerald-300 text-center max-w-xl mx-auto mb-8">From doorstep collection to robotic dismantling and high-grade mineral recovery.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center mx-auto mb-3">1</div>
+            <h4 class="font-bold text-sm mb-1">Doorstep Pickup</h4>
+            <p class="text-xs text-stone-300">Verified by OTP; collected using zero-emission electric vehicles.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center mx-auto mb-3">2</div>
+            <h4 class="font-bold text-sm mb-1">Diagnostic Triage</h4>
+            <p class="text-xs text-stone-300">Items categorized: Refurbishment, Component Salvage, or Smelting.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center mx-auto mb-3">3</div>
+            <h4 class="font-bold text-sm mb-1">Safe Neutralization</h4>
+            <p class="text-xs text-stone-300">Lithium, lead, and mercury safely quarantined from waterways.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center mx-auto mb-3">4</div>
+            <h4 class="font-bold text-sm mb-1">EcoPoints Credited</h4>
+            <p class="text-xs text-stone-300">Citizens receive verified points & carbon certificate on completion.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 2: DOORSTEP PICKUP & TRACKING          -->
+    <!-- ========================================== -->
+    <section id="tab-pickup" class="app-tab-section hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-stone-900">Doorstep E-Waste Collection Service</h2>
+          <p class="text-xs text-stone-500">Schedule certified doorstep collection or track existing pickup requests in real time.</p>
+        </div>
+        <div class="flex items-center gap-2 bg-stone-200 p-1 rounded-xl">
+          <button id="tabBtnSchedule" onclick="document.getElementById('pickupBookingSection').classList.remove('hidden'); document.getElementById('pickupTrackingSection').classList.add('hidden'); this.className='px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-stone-900 shadow-xs'; document.getElementById('tabBtnTracking').className='px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600';" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-stone-900 shadow-xs">
+            Schedule Pickup
+          </button>
+          <button id="tabBtnTracking" onclick="document.getElementById('pickupBookingSection').classList.add('hidden'); document.getElementById('pickupTrackingSection').classList.remove('hidden'); this.className='px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-stone-900 shadow-xs'; document.getElementById('tabBtnSchedule').className='px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600';" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600">
+            My Bookings & Tracking
+          </button>
+        </div>
+      </div>
+
+      <!-- Section A: Schedule Form -->
+      <div id="pickupBookingSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2 space-y-6">
+          <form id="pickupBookingForm" class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-6">
+            
+            <!-- Step 1: Device Category -->
+            <div>
+              <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                1. Select E-Waste Category
+              </label>
+              <div id="pickupCategoryCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <!-- Injected by pickup.js -->
+              </div>
+              <input type="hidden" id="pickupCategory" value="mobile">
+            </div>
+
+            <!-- Step 2: Item Description & Condition -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Device Model & Details</label>
+                <input type="text" id="pickupDeviceModel" placeholder="e.g., Dell Inspiron 15 + Charger" required class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Functional Condition</label>
+                <select id="pickupCondition" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+                  <option value="non_functional">Non-Functional / Dead Scrap</option>
+                  <option value="repairable">Damaged Screen / Battery Repairable</option>
+                  <option value="working">Working but Obsolete</option>
+                  <option value="hazardous">Swollen Battery / Leaking Chemical</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Quantity (Units)</label>
+                <input type="number" id="pickupQty" min="1" max="50" value="1" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Approximate Weight (kg)</label>
+                <input type="number" id="pickupWeight" step="0.5" min="0.5" max="100" value="1.5" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+              </div>
+            </div>
+
+            <!-- Step 3: Address & Slot -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-stone-100">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold text-stone-700 mb-1">Doorstep Pickup Address</label>
+                <input type="text" id="pickupAddress" placeholder="Flat / House number, Street name, Landmark" required class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Postal PIN Code</label>
+                <input type="text" id="pickupPincode" placeholder="e.g. 110025" required class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">Preferred Pickup Date</label>
+                <input type="date" id="pickupDate" required class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold text-stone-700 mb-1">Preferred Time Window</label>
+                <select id="pickupSlot" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+                  <option value="Morning (9:00 AM - 12:00 PM)">Morning Slot: 9:00 AM – 12:00 PM</option>
+                  <option value="Afternoon (12:00 PM - 4:00 PM)">Afternoon Slot: 12:00 PM – 4:00 PM</option>
+                  <option value="Evening (4:00 PM - 7:00 PM)">Evening Slot: 4:00 PM – 7:00 PM</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Step 4: Optional Photo Upload -->
+            <div class="pt-4 border-t border-stone-100">
+              <label class="block text-xs font-bold text-stone-700 mb-1">Upload Device Photos (Optional)</label>
+              <div class="flex items-center gap-4">
+                <input type="file" id="pickupPhotoInput" accept="image/*" class="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-100 file:text-stone-800 hover:file:bg-stone-200">
+                <img id="pickupPhotoPreview" class="h-14 w-14 object-cover rounded-xl border border-stone-200 hidden">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition-all">
+              <i class="fas fa-check-circle mr-2"></i> Confirm Doorstep Pickup Booking
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Side: Live Estimator Card -->
+        <div class="space-y-4">
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-900 to-teal-950 text-white shadow-lg space-y-4">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block">Instant Scrap & Eco Reward Preview</span>
+            
+            <div>
+              <span class="text-xs text-stone-300 block">Estimated Reward</span>
+              <span id="estimatorPointsBadge" class="text-3xl font-black text-amber-400 font-mono">+250 EcoPoints</span>
+            </div>
+
+            <div class="p-3 bg-white/10 rounded-xl border border-white/15 space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-stone-300">Estimated Scrap Value:</span>
+                <span id="estimatorScrapVal" class="font-bold text-white">₹150 - ₹350</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-stone-300">Environmental Savings:</span>
+                <span id="estimatorCo2Badge" class="font-bold text-emerald-300">~45 kg CO₂</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-stone-300 space-y-2 border-t border-white/15 pt-3">
+              <p class="flex items-center gap-2">
+                <i class="fas fa-shield-alt text-emerald-400"></i> Zero municipal landfill guarantee
+              </p>
+              <p class="flex items-center gap-2">
+                <i class="fas fa-key text-emerald-400"></i> Cryptographic 4-digit OTP handover
+              </p>
+              <p class="flex items-center gap-2">
+                <i class="fas fa-certificate text-emerald-400"></i> Digital Green Recycling Certificate
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Section B: Live Tracking View -->
+      <div id="pickupTrackingSection" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- List of Bookings -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider">Your Pickup Requests</h3>
+          <div id="myBookingsList" class="space-y-3">
+            <!-- Injected by pickup.js -->
+          </div>
+        </div>
+
+        <!-- Tracking Details -->
+        <div class="lg:col-span-2" id="trackingDetailCard">
+          <!-- Injected by pickup.js -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 3: AI-BASED E-WASTE IDENTIFIER         -->
+    <!-- ========================================== -->
+    <section id="tab-ai-classifier" class="app-tab-section hidden space-y-6">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wider border border-purple-200 mb-2">
+          <i class="fas fa-brain"></i> Computer Vision E-Waste Engine
+        </div>
+        <h2 class="text-2xl font-black text-stone-900">AI-Based Electronic Waste Identification</h2>
+        <p class="text-xs text-stone-500">Upload or drag any image of an old gadget. Our deep vision model classifies the item, reveals hidden toxins, and prescribes safe disposal protocols.</p>
+      </div>
+
+      <!-- Preset Test Buttons -->
+      <div class="flex flex-wrap items-center gap-2 bg-stone-100 p-3 rounded-2xl border border-stone-200">
+        <span class="text-xs font-bold text-stone-600 mr-2"><i class="fas fa-vial mr-1"></i> Try Test Samples:</span>
+        <button class="ai-preset-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-purple-600 hover:text-purple-700 transition-all shadow-xs" data-preset="battery-liion">
+          🔋 Lithium Battery Pack
+        </button>
+        <button class="ai-preset-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-purple-600 hover:text-purple-700 transition-all shadow-xs" data-preset="smartphone-broken">
+          📱 Cracked Smartphone
+        </button>
+        <button class="ai-preset-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-purple-600 hover:text-purple-700 transition-all shadow-xs" data-preset="motherboard-pcb">
+          💾 Computer Motherboard PCB
+        </button>
+        <button class="ai-preset-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-purple-600 hover:text-purple-700 transition-all shadow-xs" data-preset="laptop-adapter">
+          🔌 Power Adapter & Cables
+        </button>
+        <button class="ai-preset-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-purple-600 hover:text-purple-700 transition-all shadow-xs" data-preset="crt-monitor">
+          🖥️ CRT Display Monitor
+        </button>
+      </div>
+
+      <!-- Main Scanner Workspace -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left: Upload & Camera Viewfinder -->
+        <div class="space-y-4">
+          <div id="aiDropZone" class="relative rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6 text-center hover:border-purple-500 transition-all cursor-pointer">
+            <input type="file" id="aiImageUpload" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mx-auto mb-3">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h4 class="font-bold text-stone-800 text-sm mb-1">Click to Upload or Drag & Drop E-Waste Photo</h4>
+            <p class="text-xs text-stone-400">Supports PNG, JPG, WebP up to 10MB</p>
+          </div>
+
+          <!-- Viewfinder & Laser Scanner Preview -->
+          <div id="aiScanPreviewContainer" class="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 min-h-[300px] flex items-center justify-center p-4">
+            <!-- Animated Laser Scan Line -->
+            <div id="aiScanBeam" class="laser-beam hidden"></div>
+
+            <img id="aiScanImagePreview" src="assets/phone_sample.svg" alt="Scan Object" class="max-h-64 max-w-full object-contain rounded-lg">
+
+            <!-- Overlay Tensors -->
+            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-black/60 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10 text-xs text-white">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="aiScanStatusText" class="font-mono text-[11px]">AI Vision Tensor Active</span>
+              </div>
+              <span class="font-mono text-[10px] text-stone-400">ResNet-50 v2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Classification Results & Hazardous Assessment -->
+        <div id="aiResultContainer" class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-5">
+          <div class="flex items-start justify-between gap-4 pb-4 border-b border-stone-100">
+            <div>
+              <span id="aiDetectedCategory" class="px-2.5 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200 uppercase">
+                Handheld Telecom Device
+              </span>
+              <h3 id="aiDetectedTitle" class="text-xl font-bold text-stone-900 mt-1">
+                Smartphone with Fractured AMOLED Screen
+              </h3>
+            </div>
+            <div class="text-right">
+              <span id="aiConfidenceScore" class="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs font-mono block">
+                96.1% Match
+              </span>
+              <span class="text-[10px] text-stone-400">Confidence Metric</span>
+            </div>
+          </div>
+
+          <!-- Hazardous Materials Breakdown -->
+          <div>
+            <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-biohazard text-rose-500"></i> Hazardous Materials Detected
+            </h4>
+            <ul id="aiHazardousList" class="space-y-1.5">
+              <!-- Injected by ai-classifier.js -->
+            </ul>
+          </div>
+
+          <!-- Recoverable Precious Metals -->
+          <div>
+            <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-gem text-amber-500"></i> Recoverable Urban Mining Yield
+            </h4>
+            <div id="aiPreciousList" class="flex flex-wrap gap-2">
+              <!-- Injected by ai-classifier.js -->
+            </div>
+          </div>
+
+          <!-- Safe Disposal Guidelines -->
+          <div>
+            <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-shield-alt text-emerald-600"></i> Safe Handling & Data Security Protocol
+            </h4>
+            <ul id="aiAdviceList" class="space-y-1.5">
+              <!-- Injected by ai-classifier.js -->
+            </ul>
+          </div>
+
+          <!-- Value & Pickup Trigger -->
+          <div class="pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="text-xs text-stone-400 block">Recycling Reward:</span>
+              <span id="aiEstimatedPoints" class="text-lg font-black text-emerald-600 font-mono">+250 EcoPoints</span>
+              <span id="aiScrapValue" class="text-xs text-stone-500 ml-2">(₹350 - ₹1,800)</span>
+            </div>
+
+            <button id="aiBookPickupBtn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2">
+              <i class="fas fa-truck-pickup"></i> Book Doorstep Pickup for this Item
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 4: SMART RECYCLING CENTER LOCATOR      -->
+    <!-- ========================================== -->
+    <section id="tab-locator" class="app-tab-section hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-stone-900">Certified E-Waste Recycling Center Locator</h2>
+          <p class="text-xs text-stone-500">Locate authorized R2 dismantling hubs, drop-off bins, and battery collection stations near you.</p>
+        </div>
+        <button id="locatorLocateMeBtn" class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-2 shadow-sm">
+          <i class="fas fa-crosshairs text-emerald-400"></i> Use My Current GPS Location
+        </button>
+      </div>
+
+      <!-- Search & Category Filters -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex-1 min-w-[240px] relative">
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+          <input type="text" id="locatorSearchInput" placeholder="Search by city, center name, PIN code, or accepted e-waste..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-300 text-xs focus:border-emerald-500 outline-none">
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button class="locator-filter-btn active px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white" data-filter="all">All Centers</button>
+          <button class="locator-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-filter="govt">Govt R2 Certified</button>
+          <button class="locator-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-filter="cash">Instant Cash Pay</button>
+          <button class="locator-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-filter="pickup">Free Pickup</button>
+          <button class="locator-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-filter="battery">Battery Dedicated</button>
+        </div>
+      </div>
+
+      <!-- Map & Centers Split View -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Center List Column -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold text-stone-500">
+            <span>Nearby Facilities</span>
+            <span>Sorted by Distance</span>
+          </div>
+          <div id="locatorCenterList" class="max-h-[500px] overflow-y-auto pr-1 space-y-3">
+            <!-- Injected by locator.js -->
+          </div>
+        </div>
+
+        <!-- Interactive Map Column -->
+        <div class="lg:col-span-2">
+          <div class="rounded-2xl overflow-hidden border border-stone-200 shadow-sm h-[530px] bg-stone-100 relative">
+            <div id="locatorMap" class="w-full h-full z-10"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 5: ECOPOINTS & REWARD SYSTEM           -->
+    <!-- ========================================== -->
+    <section id="tab-rewards" class="app-tab-section hidden space-y-6">
+      <!-- Rewards Hero Banner -->
+      <div class="p-8 rounded-3xl bg-gradient-to-r from-emerald-800 via-teal-900 to-stone-900 text-white flex flex-wrap items-center justify-between gap-6 shadow-xl">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-emerald-300 block mb-1">EcoPoints Circular Wallet</span>
+          <div class="flex items-baseline gap-3">
+            <span id="rewardsBannerPoints" class="text-4xl sm:text-5xl font-black font-mono text-amber-400">1,250</span>
+            <span class="text-sm text-stone-300 font-bold">EcoPoints Available</span>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs text-stone-300">Member Status:</span>
+            <span id="rewardsBannerTier" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">Green Guardian</span>
+          </div>
+        </div>
+
+        <div class="bg-white/10 p-4 rounded-2xl border border-white/15 min-w-[250px]">
+          <div class="flex justify-between text-xs text-stone-300 mb-1">
+            <span>Tier Progress</span>
+            <span id="rewardsNextTierGoal" class="font-bold text-white">1,250 / 2,000 pts</span>
+          </div>
+          <div class="w-full bg-black/40 rounded-full h-2.5 overflow-hidden">
+            <div id="rewardsTierProgressBar" class="bg-amber-400 h-2.5 rounded-full transition-all duration-500" style="width: 62%"></div>
+          </div>
+          <p class="text-[11px] text-stone-300 mt-2">Reach <strong>2,000 pts</strong> to unlock <span class="text-amber-300 font-bold">Eco Warrior</span> tier benefits!</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Rewards Catalog (Col 1 & 2) -->
+        <div class="lg:col-span-2 space-y-6">
+          <div>
+            <h3 class="text-lg font-bold text-stone-900 mb-1">Redeem Rewards & Impact Vouchers</h3>
+            <p class="text-xs text-stone-500">Turn your verified e-waste disposal into real-world gift cards, tree certificates, and repair discounts.</p>
+          </div>
+
+          <div id="rewardsCatalogGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Injected by rewards.js -->
+          </div>
+
+          <!-- Redemption History -->
+          <div class="pt-6 border-t border-stone-200">
+            <h4 class="text-xs font-bold text-stone-700 uppercase tracking-wider mb-3">Your Voucher Redemption History</h4>
+            <div id="rewardsHistoryList" class="space-y-2">
+              <!-- Injected by rewards.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar: Leaderboard & Monthly Challenges -->
+        <div class="space-y-6">
+          <!-- Monthly Challenges -->
+          <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                <i class="fas fa-trophy text-amber-500"></i> Monthly Challenges
+              </h4>
+              <span class="text-[10px] text-stone-400 font-bold uppercase">October Cycle</span>
+            </div>
+            <div id="rewardsChallengesList">
+              <!-- Injected by rewards.js -->
+            </div>
+          </div>
+
+          <!-- Top Recyclers Leaderboard -->
+          <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                <i class="fas fa-crown text-amber-500"></i> Top Recyclers
+              </h4>
+              <span class="text-[10px] text-stone-400 font-bold uppercase">Metro City</span>
+            </div>
+            <div id="rewardsLeaderboardList">
+              <!-- Injected by rewards.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 6: REUSETECH MARKETPLACE & COMPONENTS  -->
+    <!-- ========================================== -->
+    <section id="tab-marketplace" class="app-tab-section hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200 mb-2">
+            <i class="fas fa-microchip"></i> Circular Tech Exchange
+          </div>
+          <h2 class="text-2xl font-black text-stone-900">ReUseTech — Second-Life Electronics & Component Hub</h2>
+          <p class="text-xs text-stone-500">Buy, sell, or donate working devices. Connect with engineering students and repair technicians seeking scrap parts.</p>
+        </div>
+        <button onclick="App.openModal('newListingModal')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center gap-2">
+          <i class="fas fa-plus"></i> List a Device or Spare Component
+        </button>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button class="mkt-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white" data-tab="all">All Items</button>
+          <button class="mkt-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-tab="sale">Refurbished Sale</button>
+          <button class="mkt-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-tab="donate">Free Student Donations</button>
+          <button class="mkt-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-tab="salvage">Salvaged Components</button>
+          <button class="mkt-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300" data-tab="request">Parts Requested</button>
+        </div>
+
+        <div class="w-full sm:w-64 relative">
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+          <input type="text" id="mktSearchInput" placeholder="Filter components, laptops..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-stone-300 text-xs focus:border-emerald-500 outline-none">
+        </div>
+      </div>
+
+      <!-- Listings Grid -->
+      <div id="marketplaceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Injected by marketplace.js -->
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 7: CARBON FOOTPRINT CALCULATOR         -->
+    <!-- ========================================== -->
+    <section id="tab-calculator" class="app-tab-section hidden space-y-6">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider border border-emerald-200 mb-2">
+          <i class="fas fa-leaf"></i> Scientific LCA Analytics
+        </div>
+        <h2 class="text-2xl font-black text-stone-900">E-Waste Carbon Footprint & Environmental Impact Calculator</h2>
+        <p class="text-xs text-stone-500">Calculate exact greenhouse emissions avoided, toxic heavy metals diverted from aquifers, and tree equivalents.</p>
+      </div>
+
+      <!-- Quick Profiles -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-stone-600 mr-2">Quick Scenarios:</span>
+        <button class="calc-scenario-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-emerald-600" data-scenario="student">
+          🎒 College Student (2 phones, 1 laptop)
+        </button>
+        <button class="calc-scenario-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-emerald-600" data-scenario="family">
+          🏡 Urban Household (4 phones, 2 laptops, TV)
+        </button>
+        <button class="calc-scenario-btn px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:border-emerald-600" data-scenario="office">
+          🏢 IT Office Floor (12 phones, 8 laptops, monitors)
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Sliders Column -->
+        <div class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-5">
+          <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider">Select Quantities to Recycle</h3>
+
+          <!-- Slider 1 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Smartphones / Tablets</span>
+              <span id="calcInput_mobileVal" class="text-emerald-600 font-mono">2</span>
+            </div>
+            <input type="range" id="calcInput_mobile" min="0" max="20" value="2" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+
+          <!-- Slider 2 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Laptops / Desktops</span>
+              <span id="calcInput_laptopVal" class="text-emerald-600 font-mono">1</span>
+            </div>
+            <input type="range" id="calcInput_laptop" min="0" max="15" value="1" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+
+          <!-- Slider 3 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Monitors / TVs</span>
+              <span id="calcInput_monitorVal" class="text-emerald-600 font-mono">1</span>
+            </div>
+            <input type="range" id="calcInput_monitor" min="0" max="10" value="1" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+
+          <!-- Slider 4 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Batteries / Power Banks</span>
+              <span id="calcInput_batteryVal" class="text-emerald-600 font-mono">4</span>
+            </div>
+            <input type="range" id="calcInput_battery" min="0" max="30" value="4" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+
+          <!-- Slider 5 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Home Appliances (Microwaves, fridges)</span>
+              <span id="calcInput_applianceVal" class="text-emerald-600 font-mono">0</span>
+            </div>
+            <input type="range" id="calcInput_appliance" min="0" max="5" value="0" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+
+          <!-- Slider 6 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold text-stone-800 mb-1">
+              <span>Chargers, Cables & Accessories (kg)</span>
+              <span id="calcInput_cablesVal" class="text-emerald-600 font-mono">2</span>
+            </div>
+            <input type="range" id="calcInput_cables" min="0" max="20" value="2" class="calc-slider-input w-full accent-emerald-600">
+          </div>
+        </div>
+
+        <!-- Calculated Metrics & Comparison Column -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Big KPI Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div class="p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
+              <span class="text-[11px] font-bold text-emerald-800 uppercase block mb-1">CO₂ Prevented</span>
+              <span id="calcResultCo2" class="text-2xl font-black text-emerald-900 font-mono">626 kg</span>
+              <p class="text-[10px] text-emerald-700 mt-1">From avoided virgin mining</p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-amber-50 border border-amber-200">
+              <span class="text-[11px] font-bold text-amber-800 uppercase block mb-1">Toxins Diverted</span>
+              <span id="calcResultMetals" class="text-2xl font-black text-amber-900 font-mono">0.82 kg</span>
+              <p class="text-[10px] text-amber-700 mt-1">Lead, cadmium & mercury</p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-sky-50 border border-sky-200">
+              <span class="text-[11px] font-bold text-sky-800 uppercase block mb-1">Water Preserved</span>
+              <span id="calcResultWater" class="text-2xl font-black text-sky-900 font-mono">8,480 L</span>
+              <p class="text-[10px] text-sky-700 mt-1">Clean water saved from leachate</p>
+            </div>
+          </div>
+
+          <!-- Equivalencies -->
+          <div class="p-4 rounded-xl bg-stone-100 border border-stone-200 flex flex-wrap items-center justify-around gap-4 text-xs">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-tree text-emerald-600 text-lg"></i>
+              <div>
+                <span class="text-stone-500 block text-[10px]">Tree Absorption Equivalent</span>
+                <strong id="calcResultTrees" class="text-stone-800">28.8 trees</strong>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-car text-indigo-600 text-lg"></i>
+              <div>
+                <span class="text-stone-500 block text-[10px]">Passenger Car Driving Avoided</span>
+                <strong id="calcResultCarKm" class="text-stone-800">2,567 km</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Comparison Chart -->
+          <div class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm">
+            <h4 class="text-xs font-bold text-stone-700 uppercase tracking-wider mb-4">
+              Disposal Scenario Impact Comparison (Life Cycle Assessment)
+            </h4>
+            <div id="calcChartContainer">
+              <!-- Injected by calculator.js -->
+            </div>
+          </div>
+
+          <!-- Certificate Action -->
+          <div class="flex justify-end">
+            <button id="calcDownloadCertBtn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2">
+              <i class="fas fa-award"></i> Generate Official Carbon Mitigation Certificate
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 8: ILLEGAL DUMPING REPORTING           -->
+    <!-- ========================================== -->
+    <section id="tab-reports" class="app-tab-section hidden space-y-6">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-bold uppercase tracking-wider border border-red-200 mb-2">
+          <i class="fas fa-bullhorn"></i> Citizen Environmental Watch
+        </div>
+        <h2 class="text-2xl font-black text-stone-900">E-Waste Complaint & Illegal Disposal Reporting Portal</h2>
+        <p class="text-xs text-stone-500">Report informal burning of wiring, open canal dumping of monitors, or illicit scrap dealers to municipal authorities.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Report Submission Form -->
+        <div class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">File Environmental Violation</h3>
+
+          <form id="reportDumpingForm" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-stone-700 mb-1">Violation Location / Address</label>
+              <div class="flex gap-2">
+                <input type="text" id="reportLocation" placeholder="Street, Industrial Area, GPS Pin" required class="flex-1 text-xs p-3 rounded-xl border border-stone-300 focus:border-red-500 outline-none">
+                <button type="button" id="reportAutoLocBtn" title="Auto Tag GPS" class="px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs">
+                  <i class="fas fa-location-arrow"></i>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-stone-700 mb-1">Nearby Landmark</label>
+              <input type="text" id="reportLandmark" placeholder="e.g. Behind railway overbridge, near electric sub-station" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-red-500 outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-stone-700 mb-1">Severity Hazard Level</label>
+              <select id="reportHazardLevel" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-red-500 outline-none">
+                <option value="Critical">Critical (Active toxic smoke burning / CRT glass in water body)</option>
+                <option value="High" selected>High (Commercial dumping of circuit boards / transformers)</option>
+                <option value="Moderate">Moderate (Discarded consumer appliances on vacant lot)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-stone-700 mb-1">Observed Waste & Description</label>
+              <textarea id="reportDescription" rows="3" required placeholder="Describe what you witnessed (burning cables, leaking batteries, truck dumping...)" class="w-full text-xs p-3 rounded-xl border border-stone-300 focus:border-red-500 outline-none"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-stone-700 mb-1">Upload Photo Proof (Optional)</label>
+              <input type="file" id="reportPhotoInput" accept="image/*" class="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-stone-100 file:font-bold">
+              <img id="reportPhotoPreview" class="h-16 w-16 object-cover rounded-xl mt-2 hidden border border-stone-200">
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition-all">
+              <i class="fas fa-paper-plane mr-1.5"></i> Submit Complaint (+150 Civic EcoPoints)
+            </button>
+          </form>
+        </div>
+
+        <!-- Community Incident Feed -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold text-stone-500">
+            <span>Recent Municipal Incident Dispatches</span>
+            <span>Live Action Status</span>
+          </div>
+          <div id="dumpingReportsFeed">
+            <!-- Injected by reports.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 9: AWARENESS & ECOQUIZ                 -->
+    <!-- ========================================== -->
+    <section id="tab-learning" class="app-tab-section hidden space-y-8">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-wider border border-sky-200 mb-2">
+          <i class="fas fa-graduation-cap"></i> Environmental Education
+        </div>
+        <h2 class="text-2xl font-black text-stone-900">E-Waste Knowledge Hub & Interactive EcoQuiz</h2>
+        <p class="text-xs text-stone-500">Learn about urban mining, hazardous heavy metals, DIY data sanitization, and test your knowledge for bonus EcoPoints.</p>
+      </div>
+
+      <!-- Articles Grid -->
+      <div id="learningArticlesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Injected by learning.js -->
+      </div>
+
+      <!-- Interactive EcoQuiz -->
+      <div class="pt-6 border-t border-stone-200">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-stone-900 flex items-center gap-2">
+              <i class="fas fa-award text-amber-500"></i> Interactive Circular Economy Quiz
+            </h3>
+            <p class="text-xs text-stone-500">Score 60% or higher to earn an official EcoBadge and deposit +100 EcoPoints into your wallet!</p>
+          </div>
+          <button id="quizRestartBtn" class="px-3 py-1.5 rounded-lg border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-50">
+            <i class="fas fa-redo mr-1"></i> Restart
+          </button>
+        </div>
+
+        <div class="max-w-2xl mx-auto">
+          <div id="quizActiveContainer">
+            <!-- Injected by learning.js -->
+          </div>
+          <div id="quizResultContainer" class="hidden">
+            <!-- Injected by learning.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 10: ADMIN COMMAND CENTER               -->
+    <!-- ========================================== -->
+    <section id="tab-admin" class="app-tab-section hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider border border-rose-200 mb-2">
+            <i class="fas fa-shield-alt"></i> Municipal & Executive Portal
+          </div>
+          <h2 class="text-2xl font-black text-stone-900">Admin Operations Command Center</h2>
+          <p class="text-xs text-stone-500">Manage incoming e-waste requests, route assignments, collector dispatches, and export compliance reports.</p>
+        </div>
+        <button id="adminExportCsvBtn" class="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm">
+          <i class="fas fa-file-csv text-emerald-400"></i> Export Compliance CSV Report
+        </button>
+      </div>
+
+      <!-- KPI Overview Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs">
+          <span class="text-[10px] text-stone-400 font-bold uppercase block">Total Diverted</span>
+          <span id="adminKpiTotalWeight" class="text-xl font-black text-stone-900 font-mono">14,832 kg</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs">
+          <span class="text-[10px] text-stone-400 font-bold uppercase block">Active Pickups</span>
+          <span id="adminKpiActivePickups" class="text-xl font-black text-sky-600 font-mono">2</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs">
+          <span class="text-[10px] text-stone-400 font-bold uppercase block">Completed Cycles</span>
+          <span id="adminKpiCompleted" class="text-xl font-black text-emerald-600 font-mono">1</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs">
+          <span class="text-[10px] text-stone-400 font-bold uppercase block">Points Awarded</span>
+          <span id="adminKpiPointsDistributed" class="text-xl font-black text-amber-500 font-mono">1,770</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs">
+          <span class="text-[10px] text-stone-400 font-bold uppercase block">Pending Dumping Reports</span>
+          <span id="adminKpiPendingReports" class="text-xl font-black text-rose-600 font-mono">1</span>
+        </div>
+      </div>
+
+      <!-- All Pickup Requests Table -->
+      <div class="p-6 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <h3 class="text-sm font-bold text-stone-900">All Scheduled Doorstep Pickups</h3>
+          
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-stone-500">Filter Status:</span>
+            <select id="adminRequestStatusFilter" class="text-xs p-2 rounded-lg border border-stone-300 outline-none">
+              <option value="all">All Statuses</option>
+              <option value="PENDING">Pending Assignment</option>
+              <option value="COLLECTOR_ASSIGNED">Collector Assigned</option>
+              <option value="OUT_FOR_PICKUP">Out for Pickup</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-stone-200 text-[11px] font-bold text-stone-400 uppercase tracking-wider bg-stone-50/50">
+                <th class="p-3">Order ID</th>
+                <th class="p-3">Citizen Contact</th>
+                <th class="p-3">Device / Category</th>
+                <th class="p-3">Schedule Slot</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Points</th>
+                <th class="p-3">Dispatch Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminRequestsTableBody">
+              <!-- Injected by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 11: COLLECTOR OPERATIONS DASHBOARD     -->
+    <!-- ========================================== -->
+    <section id="tab-collector" class="app-tab-section hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-wider border border-sky-200 mb-2">
+            <i class="fas fa-truck"></i> Route Dispatch & Handover
+          </div>
+          <h2 class="text-2xl font-black text-stone-900">Certified Collector Hub & Route Manager</h2>
+          <p class="text-xs text-stone-500">View your assigned collection itinerary, navigate to doorsteps, and verify handovers via OTP.</p>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-900 text-xs font-bold">
+          <i class="fas fa-shuttle-van mr-1"></i> Vehicle: EV-VAN-9082 (Active)
+        </div>
+      </div>
+
+      <div id="collectorTasksList">
+        <!-- Injected by admin.js -->
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-stone-400 text-xs py-10 mt-12 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-white font-black text-lg">Eco<span class="text-emerald-400">Cycle</span></span>
+          </div>
+          <p class="text-stone-400 text-xs leading-relaxed mb-4">
+            Transforming municipal electronic waste into sustainable circular value through AI diagnostics, doorstep logistics, and civic rewards.
+          </p>
+          <p class="text-[11px] text-stone-500">ISO 14001 Compliant & R2 Certified</p>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Key Modules</h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="#pickup" onclick="App.switchTab('pickup')" class="hover:text-emerald-400">Doorstep Collection</a></li>
+            <li><a href="#ai-classifier" onclick="App.switchTab('ai-classifier')" class="hover:text-emerald-400">AI E-Waste Vision</a></li>
+            <li><a href="#locator" onclick="App.switchTab('locator')" class="hover:text-emerald-400">Drop-off Bin Locator</a></li>
+            <li><a href="#rewards" onclick="App.switchTab('rewards')" class="hover:text-emerald-400">EcoPoints Rewards</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Circularity & ReUse</h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="#marketplace" onclick="App.switchTab('marketplace')" class="hover:text-emerald-400">ReUseTech Exchange</a></li>
+            <li><a href="#calculator" onclick="App.switchTab('calculator')" class="hover:text-emerald-400">Carbon Footprint Calculator</a></li>
+            <li><a href="#reports" onclick="App.switchTab('reports')" class="hover:text-emerald-400">Report Illegal Dumping</a></li>
+            <li><a href="#learning" onclick="App.switchTab('learning')" class="hover:text-emerald-400">Awareness & Quiz</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Emergency E-Waste Helpline</h4>
+          <p class="text-xs text-stone-300 mb-2">Toll-Free National Hazardous E-Waste Line:</p>
+          <p class="text-sm font-bold font-mono text-emerald-400 mb-4">1800-420-CYCLE (29253)</p>
+          <div class="p-3 rounded-xl bg-slate-800 text-[11px] text-stone-400">
+            For academic demonstration, engineering final year projects, and hackathon showcases.
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-[11px]">
+        <p>&copy; 2026 EcoCycle Smart Systems. Built for Sustainable Circularity.</p>
+        <div class="flex gap-4">
+          <button onclick="StorageManager.resetAll()" class="hover:text-rose-400 text-[11px]">
+            <i class="fas fa-trash-restore mr-1"></i> Reset Demo Mock Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ========================================== -->
+  <!-- MODALS                                     -->
+  <!-- ========================================== -->
+
+  <!-- 1. Authentication Modal -->
+  <div id="authModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <button data-close-modal="authModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      
+      <!-- Current Profile Card -->
+      <div class="mb-6 p-4 rounded-2xl bg-stone-50 border border-stone-200">
+        <span class="text-[10px] font-bold uppercase text-stone-400 block mb-1">Active Signed-In Profile</span>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">
+            <span id="profileCardAvatar">AM</span>
+          </div>
+          <div>
+            <h4 id="profileCardName" class="font-bold text-stone-900 text-sm">Alex Morgan</h4>
+            <p id="profileCardEmail" class="text-xs text-stone-500">alex@ecocycle.org</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mt-3 pt-2 border-t border-stone-200 text-xs">
+          <span id="profileCardTier" class="font-semibold text-emerald-700">Green Guardian</span>
+          <span id="profileCardPoints" class="font-bold font-mono text-stone-800">1,250 pts</span>
+        </div>
+      </div>
+
+      <!-- Quick Role Toggle Buttons -->
+      <div class="mb-6">
+        <label class="block text-xs font-bold text-stone-700 mb-2">Instant Role Switcher:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="AuthModule.switchRole('citizen'); App.closeModal('authModal');" class="p-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold text-center hover:bg-emerald-100">
+            Citizen
+          </button>
+          <button onclick="AuthModule.switchRole('collector'); App.closeModal('authModal');" class="p-2 rounded-xl border border-sky-300 bg-sky-50 text-sky-800 text-xs font-bold text-center hover:bg-sky-100">
+            Collector
+          </button>
+          <button onclick="AuthModule.switchRole('admin'); App.closeModal('authModal');" class="p-2 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-bold text-center hover:bg-rose-100">
+            Admin
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center pt-2 border-t border-stone-100">
+        <button data-close-modal="authModal" class="px-5 py-2 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Recycling Center Details Modal -->
+  <div id="centerDetailModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button data-close-modal="centerDetailModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      <div id="centerModalContent"></div>
+    </div>
+  </div>
+
+  <!-- 3. New Marketplace Listing Modal -->
+  <div id="newListingModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button data-close-modal="newListingModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      <h3 class="text-lg font-bold text-stone-900 mb-1">List Device or Scrap Component</h3>
+      <p class="text-xs text-stone-500 mb-4">Make reusable components available for students, repair labs, or buyers.</p>
+
+      <form id="newListingForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Listing Type</label>
+          <select id="listingType" class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+            <option value="sale">Refurbished Device for Sale</option>
+            <option value="donate">Free Donation to Students/Makers</option>
+            <option value="salvage">Salvaged Spare Components (Cells, boards, screens)</option>
+            <option value="request">Component Requested (Looking for part)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Title</label>
+          <input type="text" id="listingTitle" placeholder="e.g. 18650 Li-ion cells tested, or ThinkPad T480" required class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">Category</label>
+            <select id="listingCategory" class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+              <option value="laptop">Laptops / Computers</option>
+              <option value="mobile">Smartphones / Tablets</option>
+              <option value="battery">Batteries / Cells</option>
+              <option value="pcb">Motherboards / PCBs</option>
+              <option value="monitors">Displays / Monitors</option>
+              <option value="cables">Accessories / Parts</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">Price (₹ / INR, 0 for Free)</label>
+            <input type="number" id="listingPrice" value="0" min="0" class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Condition</label>
+          <input type="text" id="listingCondition" placeholder="e.g. Tested Working, Refurbished, Scrap for practice" required class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Detailed Technical Specs & Description</label>
+          <textarea id="listingSpecs" rows="3" placeholder="Provide RAM, voltage, capacity, part numbers, or what you need..." required class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">Location / Area</label>
+            <input type="text" id="listingLocation" placeholder="e.g. Sector 18, Metro City" required class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">Contact Phone</label>
+            <input type="text" id="listingPhone" placeholder="+91 98000 00000" class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
+          Publish to Exchange
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Marketplace Contact Modal -->
+  <div id="contactModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <button data-close-modal="contactModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      <div id="contactModalContent"></div>
+    </div>
+  </div>
+
+  <!-- 5. Educational Article Modal -->
+  <div id="articleModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button data-close-modal="articleModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      <div id="articleModalContent"></div>
+    </div>
+  </div>
+
+  <!-- 6. Official Carbon Mitigation Certificate Modal -->
+  <div id="certModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl relative">
+      <button data-close-modal="certModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      <div id="certModalContent"></div>
+    </div>
+  </div>
+
+  <!-- 7. Collector OTP Verification Modal -->
+  <div id="collectorOtpModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <button data-close-modal="collectorOtpModal" class="absolute right-4 top-4 text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
+      
+      <div class="text-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl mx-auto mb-2">
+          <i class="fas fa-key"></i>
+        </div>
+        <h3 class="text-lg font-bold text-stone-900">Verify Citizen Handover OTP</h3>
+        <p class="text-xs text-stone-500">Order: <span id="collectorOtpPickupIdDisplay" class="font-mono font-bold text-stone-800">ECO-8921</span></p>
+      </div>
+
+      <form id="collectorVerifyOtpForm" class="space-y-4">
+        <input type="hidden" id="collectorOtpPickupId">
+
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Enter 4-Digit Handover OTP</label>
+          <input type="text" id="collectorInputOtp" maxlength="4" placeholder="e.g. 4829" required class="w-full text-center text-2xl font-mono font-black tracking-widest p-3 rounded-xl border border-stone-300 focus:border-emerald-500 outline-none">
+          <p class="text-[11px] text-stone-400 mt-1 text-center">Ask citizen for their 4-digit secret verification code.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">Actual Weighed Scale Reading (kg)</label>
+          <input type="number" id="collectorVerifiedWeight" step="0.1" value="2.5" required class="w-full text-xs p-3 rounded-xl border border-stone-300 outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
+          Confirm E-Waste Verification & Credit Points
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Application Logic Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/pickup.js"></script>
+  <script src="js/ai-classifier.js"></script>
+  <script src="js/locator.js"></script>
+  <script src="js/rewards.js"></script>
+  <script src="js/marketplace.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/learning.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
